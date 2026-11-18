@@ -1,5 +1,5 @@
 # temporary test setup — external test deploy (IP access, no ICP domain)
-# Public entry: http://159.75.3.202:7000 via Caddy only.
+# Public entry: http://159.75.3.202 via Caddy only.
 #
 # Usage (from this directory):
 #   cp .env.example .env
@@ -15,9 +15,9 @@ services:
     image: caddy:2-alpine
     container_name: new-api-caddy
     restart: unless-stopped
-    # temporary test setup: public HTTP only on 7000
+    # temporary test setup: public HTTP only on 80
     ports:
-      - "7000:7000"
+      - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy_data:/data
@@ -34,8 +34,8 @@ services:
     restart: unless-stopped
     command: --log-dir /app/logs
     # temporary test setup: keep app on internal :3000 only.
-    # Host HTTP is handled by Caddy (7000 → new-api:3000).
-    # No host port publish here, so 7000 is not double-bound.
+    # Host HTTP is handled by Caddy (80 → new-api:3000).
+    # No host port publish here, so 80 is not double-bound.
     expose:
       - "3000"
     volumes:
@@ -53,7 +53,7 @@ services:
       - ERROR_LOG_ENABLED=true
       - BATCH_UPDATE_ENABLED=true
       - NODE_NAME=new-api-test-1
-      # temporary test setup: HTTP :7000 — Secure cookies would drop refresh and expire ~15m
+      # temporary test setup: HTTP :80 — Secure cookies would drop refresh and expire ~15m
       - SESSION_COOKIE_SECURE=false
       # Two independent fixed secrets (do not reuse across envs; keep stable on this host)
       - SESSION_SECRET=c6592a7b44fe2aff6adb3bd3c56e0421011203000a215f88269759bc755e550a

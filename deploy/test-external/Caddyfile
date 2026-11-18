@@ -1,13 +1,14 @@
 # temporary test setup — Caddy reverse proxy (IP access; no ICP domain)
-# Public HTTP: http://159.75.3.202:7000
+# Public HTTP: http://159.75.3.202/  (port 80)
 # Domain is not used (unfiled domains are blocked on mainland networks).
 
 {
 	auto_https off
-	http_port 7000
+	http_port 80
 }
 
-http://159.75.3.202:7000 {
+# Default HTTP port: browsers send Host without :80
+http://159.75.3.202 {
 	encode gzip
 
 	reverse_proxy new-api:3000 {

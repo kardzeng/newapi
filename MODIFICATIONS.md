@@ -28,3 +28,4 @@
 | 2026-11-18 | `web/src/features/system-update/__tests__/update-checking.test.tsx` | 测试中临时打开自动检查路径以覆盖原有用例 |
 | 2026-11-18 | `deploy/test-external/{docker-compose.yml,Caddyfile,DEPLOY_TEST.md,.env.example}` | 对外 HTTP 端口由 8080 改为 7000（HTTPS 仍为 8443） |
 | 2026-11-18 | `deploy/test-external/{Caddyfile,docker-compose.yml,DEPLOY_TEST.md}` | 改为 IP 访问 `http://159.75.3.202:7000`；关闭域名/HTTPS 入口（规避未备案拦截） |
+| 2026-11-18 | `deploy/test-external/{Caddyfile,docker-compose.yml,DEPLOY_TEST.md,.env.example}` | 对外 HTTP 端口由 7000 改为标准 80（`http://159.75.3.202/`） |
