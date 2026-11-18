@@ -3,7 +3,7 @@
 本目录是面向外网临时测试的最小部署配置（2 核 2G、MySQL、访问量小）。
 
 - 域名：`newapi.aigava.ai`
-- 对外端口：HTTP `8080`、HTTPS `8443`
+- 对外端口：HTTP `7000`、HTTPS `8443`
 - 未发布常用特权 Web 端口；公网入口只有 Caddy
 - 无 Redis：`MEMORY_CACHE_ENABLED=true`（省内存）
 - 合规：勿改仓库根目录的 `LICENSE` / `NOTICE` / `THIRD-PARTY-LICENSES.md`；界面署名保持原样
@@ -16,7 +16,7 @@
 dig +short newapi.aigava.ai
 ```
 
-安全组 / 防火墙只放行入站 **8080** 与 **8443**（以及你自己用的 SSH）。
+安全组 / 防火墙只放行入站 **7000** 与 **8443**（以及你自己用的 SSH）。
 
 ## 2. 准备环境变量
 
@@ -42,7 +42,7 @@ chmod 600 .env secrets/mysql_root.env
    - `MYSQL_ROOT_PASSWORD=`（`openssl rand -base64 32`）  
    - **不要**把 root 密码写进 `.env`，**不要**把该文件挂给 `new-api` 容器  
 3. 会话密钥与 Cookie：已在 `docker-compose.yml` 固定  
-   - `SESSION_COOKIE_SECURE=false`（HTTP `:8080`；若为 true，refresh cookie 不发送，约 15 分钟掉登录）  
+   - `SESSION_COOKIE_SECURE=false`（HTTP `:7000`；若为 true，refresh cookie 不发送，约 15 分钟掉登录）  
    - `SESSION_SECRET` / `CRYPTO_SECRET` 为两个独立固定长串（勿跨环境复用）  
    - 未设置 `SESSION_COOKIE_TRUSTED_URL`（Secure=false 时不应配置）
 
@@ -96,7 +96,7 @@ https://newapi.aigava.ai:8443
 HTTP 调试入口：
 
 ```text
-http://newapi.aigava.ai:8080
+http://newapi.aigava.ai:7000
 ```
 
 默认管理员账号以镜像 / 首次启动提示为准（上游 new-api 惯例多为首次打开控制台设置）。

@@ -1,5 +1,5 @@
 # temporary test setup — Caddy reverse proxy for newapi.aigava.ai
-# Public listeners: HTTP 8080, HTTPS 8443 (not the usual privileged web ports).
+# Public listeners: HTTP 7000, HTTPS 8443 (not the usual privileged web ports).
 #
 # Default TLS mode is `tls internal` (self-signed / local CA) so the stack
 # comes up without ACME. Let's Encrypt HTTP-01 / TLS-ALPN-01 need the usual
@@ -8,7 +8,7 @@
 
 {
 	# temporary test setup: bind HTTP & HTTPS to these ports only
-	http_port 8080
+	http_port 7000
 	https_port 8443
 	# Prefer local/self-signed CA for this temporary test setup
 	local_certs
@@ -36,8 +36,8 @@ https://newapi.aigava.ai:8443 {
 	}
 }
 
-# Plain HTTP on :8080 (temporary test setup; no forced HTTPS redirect)
-http://newapi.aigava.ai:8080 {
+# Plain HTTP on :7000 (temporary test setup; no forced HTTPS redirect)
+http://newapi.aigava.ai:7000 {
 	reverse_proxy new-api:3000 {
 		flush_interval -1
 		header_up Host {host}
