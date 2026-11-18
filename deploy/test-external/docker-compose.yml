@@ -1,6 +1,5 @@
-# temporary test setup — external test deploy for newapi.aigava.ai
-# Ports published on the host: 7000 (HTTP) and 8443 (HTTPS) via Caddy only.
-# Do not publish the usual privileged web ports; Caddy is the sole public entry.
+# temporary test setup — external test deploy (IP access, no ICP domain)
+# Public entry: http://159.75.3.202:7000 via Caddy only.
 #
 # Usage (from this directory):
 #   cp .env.example .env
@@ -16,10 +15,9 @@ services:
     image: caddy:2-alpine
     container_name: new-api-caddy
     restart: unless-stopped
-    # temporary test setup: public listeners only on 7000 / 8443
+    # temporary test setup: public HTTP only on 7000
     ports:
       - "7000:7000"
-      - "8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy_data:/data
@@ -36,7 +34,7 @@ services:
     restart: unless-stopped
     command: --log-dir /app/logs
     # temporary test setup: keep app on internal :3000 only.
-    # Host HTTP/HTTPS is handled by Caddy (7000 / 8443 → new-api:3000).
+    # Host HTTP is handled by Caddy (7000 → new-api:3000).
     # No host port publish here, so 7000 is not double-bound.
     expose:
       - "3000"
