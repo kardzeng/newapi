@@ -45,7 +45,11 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { useSystemUpdatePreferencesStore, useSystemUpdateStore } from '../store'
 import { SystemUpdateAction } from '../system-update-action'
-import { SYSTEM_UPDATE_INTERVAL, useSystemUpdate } from '../use-system-update'
+import {
+  SYSTEM_UPDATE_INTERVAL,
+  setSystemUpdateAutoCheckEnabledForTests,
+  useSystemUpdate,
+} from '../use-system-update'
 
 const release = {
   tag_name: 'v1.0.0-rc.36',
@@ -81,6 +85,8 @@ beforeEach(() => {
     .auth.setUser({ id: 1, username: 'admin', role: ROLE.ADMIN })
   focusManager.setFocused(true)
   onlineManager.setOnline(true)
+  // Exercise auto-check path in unit tests; production keeps it disabled.
+  setSystemUpdateAutoCheckEnabledForTests(true)
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
   respondWithRelease()
@@ -100,6 +106,7 @@ afterEach(() => {
   localStorage.clear()
   focusManager.setFocused(undefined)
   onlineManager.setOnline(true)
+  setSystemUpdateAutoCheckEnabledForTests(false)
   vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()

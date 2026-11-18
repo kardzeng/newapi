@@ -35,14 +35,16 @@ cp secrets/mysql_root.env.example secrets/mysql_root.env
 chmod 600 .env secrets/mysql_root.env
 ```
 
-1. `.env`：只放应用侧  
+1. `.env`：只放应用侧 MySQL 普通用户  
    - `MYSQL_USER=newapi`  
    - `MYSQL_PASSWORD=` 应用库强密码  
-   - `SESSION_SECRET=`（`openssl rand -hex 32`）  
-   - `SESSION_COOKIE_TRUSTED_URL=https://newapi.aigava.ai:8443`  
 2. `secrets/mysql_root.env`：只放 root  
    - `MYSQL_ROOT_PASSWORD=`（`openssl rand -base64 32`）  
    - **不要**把 root 密码写进 `.env`，**不要**把该文件挂给 `new-api` 容器  
+3. 会话密钥与 Cookie：已在 `docker-compose.yml` 固定  
+   - `SESSION_COOKIE_SECURE=false`（HTTP `:8080`；若为 true，refresh cookie 不发送，约 15 分钟掉登录）  
+   - `SESSION_SECRET` / `CRYPTO_SECRET` 为两个独立固定长串（勿跨环境复用）  
+   - 未设置 `SESSION_COOKIE_TRUSTED_URL`（Secure=false 时不应配置）
 
 ### Root 密码安全方案（temporary test setup）
 

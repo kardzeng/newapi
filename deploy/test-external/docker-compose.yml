@@ -55,9 +55,11 @@ services:
       - ERROR_LOG_ENABLED=true
       - BATCH_UPDATE_ENABLED=true
       - NODE_NAME=new-api-test-1
-      - SESSION_SECRET=${SESSION_SECRET}
-      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
-      - SESSION_COOKIE_TRUSTED_URL=${SESSION_COOKIE_TRUSTED_URL:-https://newapi.aigava.ai:8443}
+      # temporary test setup: HTTP :8080 — Secure cookies would drop refresh and expire ~15m
+      - SESSION_COOKIE_SECURE=false
+      # Two independent fixed secrets (do not reuse across envs; keep stable on this host)
+      - SESSION_SECRET=c6592a7b44fe2aff6adb3bd3c56e0421011203000a215f88269759bc755e550a
+      - CRYPTO_SECRET=6480ee931d08711bf351379eed6d12077ed79cde698e46fa15d8760ec899b506
       # Trust Docker bridge / private ranges so Caddy-forwarded client IP works
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
     depends_on:

@@ -21,3 +21,8 @@
 | 2026-11-18 | `deploy/test-external/mysql-init/01-restrict-newapi.sql` | 限制 `newapi` 仅对 `new-api` 库有 ALL 权限 |
 | 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 补充 root 分文件 + localhost 隔离安全方案与登录说明 |
 | 2026-11-18 | `.gitignore` | 忽略 `deploy/test-external/secrets/*.env`（保留 `*.example`） |
+| 2026-11-18 | `deploy/test-external/docker-compose.yml` | HTTP 测试：`SESSION_COOKIE_SECURE=false`；固定独立的 `SESSION_SECRET` 与 `CRYPTO_SECRET` |
+| 2026-11-18 | `deploy/test-external/.env.example` | 会话密钥改由 compose 固定；示例中移除 Secure/TRUSTED_URL |
+| 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 同步 HTTP Cookie / 双密钥说明 |
+| 2026-11-18 | `web/src/features/system-update/use-system-update.ts` | 关闭管理端自动检查更新（`enabled: false`），避免直连 api.github.com |
+| 2026-11-18 | `web/src/features/system-update/__tests__/update-checking.test.tsx` | 测试中临时打开自动检查路径以覆盖原有用例 |

@@ -49,6 +49,14 @@ import {
 export const SYSTEM_UPDATE_INTERVAL = 60 * 60 * 1000
 export const SYSTEM_UPDATE_QUERY_KEY = ['system-update'] as const
 
+// Production keeps auto GitHub checks off (restricted networks toast Network Error).
+// Tests may enable via setSystemUpdateAutoCheckEnabledForTests(true).
+let systemUpdateAutoCheckEnabledForTests = false
+
+export function setSystemUpdateAutoCheckEnabledForTests(enabled: boolean) {
+  systemUpdateAutoCheckEnabledForTests = enabled
+}
+
 export function getUpdateErrorMessage(
   code: UpdateCheckErrorCode,
   t: TFunction
@@ -139,7 +147,11 @@ export function useSystemUpdate() {
   const queryClient = useQueryClient()
   const query = useQuery({
     ...systemUpdateQueryOptions,
-    enabled: isAdmin && visible && online,
+    // Production: false (no browser → api.github.com). Tests may enable via
+    // setSystemUpdateAutoCheckEnabledForTests(true) for the legacy auto-check path.
+    enabled: systemUpdateAutoCheckEnabledForTests
+      ? isAdmin && visible && online
+      : false,
   })
 
   useEffect(() => {
