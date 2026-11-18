@@ -27,45 +27,44 @@ cd deploy/test-external
 cp .env.example .env
 ```
 
-编辑 `.env`：
+准备两份密钥文件（**拆分存放**）：
 
-1. `MYSQL_USER=newapi`（默认即可）  
-2. 把 `MYSQL_PASSWORD=CHANGE_ME` 改成应用库强密码（**new-api 用这个账号连库，不用 root**）  
-3. 把 `MYSQL_ROOT_PASSWORD=CHANGE_ME_ROOT_ONLY` 改成另一套强密码（仅容器初始化 / 紧急运维）  
-4. 用 `openssl rand -hex 32` 生成并填入 `SESSION_SECRET`  
-5. 确认 `SESSION_COOKIE_TRUSTED_URL=https://newapi.aigava.ai:8443`
+```bash
+cp .env.example .env
+cp secrets/mysql_root.env.example secrets/mysql_root.env
+chmod 600 .env secrets/mysql_root.env
+```
+
+1. `.env`：只放应用侧  
+   - `MYSQL_USER=newapi`  
+   - `MYSQL_PASSWORD=` 应用库强密码  
+   - `SESSION_SECRET=`（`openssl rand -hex 32`）  
+   - `SESSION_COOKIE_TRUSTED_URL=https://newapi.aigava.ai:8443`  
+2. `secrets/mysql_root.env`：只放 root  
+   - `MYSQL_ROOT_PASSWORD=`（`openssl rand -base64 32`）  
+   - **不要**把 root 密码写进 `.env`，**不要**把该文件挂给 `new-api` 容器  
+
+### Root 密码安全方案（temporary test setup）
+
+| 措施 | 说明 |
+| --- | --- |
+| 文件分离 | 应用密钥在 `.env`，root 在 `secrets/mysql_root.env` |
+| 权限 | 两文件均 `chmod 600`，仅部署用户可读 |
+| 不进 Git | `.env` 与 `secrets/*.env` 已忽略；只提交 `*.example` |
+| 网络隔离 | `MYSQL_ROOT_HOST=localhost`：root 不能从 `new-api` 容器或外网连，只能 `docker compose exec` 进 mysql 容器再用 |
+| 应用权限 | `newapi` 经 `mysql-init` 限制为仅对库 `new-api` 有 ALL，无其它库权限 |
 
 ### MySQL 怎么登录
 
-| 用途 | 用户 | 密码变量 | 说明 |
-| --- | --- | --- | --- |
-| 应用 / 日常 | `newapi` | `MYSQL_PASSWORD` | 官方镜像初始化时自动创建，权限仅库 `new-api` |
-| 紧急管理 | `root` | `MYSQL_ROOT_PASSWORD` | 不要写进 `SQL_DSN`；平时别用 |
-
-在容器内登录应用用户：
-
 ```bash
-docker compose exec mysql \
-  mysql -u newapi -p"$MYSQL_PASSWORD" new-api
-# 或交互输入密码：
+# 日常：应用用户（只能进 new-api 库）
 docker compose exec -it mysql mysql -u newapi -p new-api
-```
 
-紧急用 root：
-
-```bash
+# 紧急：root（仅容器内 localhost）
 docker compose exec -it mysql mysql -u root -p
 ```
 
-**注意：** `MYSQL_USER` / `MYSQL_PASSWORD` 只在 **首次** 初始化 `./mysql_data` 时生效。若以前已经用 root 起过库，需要删卷重建，或手动建用户：
-
-```sql
-CREATE USER 'newapi'@'%' IDENTIFIED BY '你的密码';
-GRANT ALL PRIVILEGES ON `new-api`.* TO 'newapi'@'%';
-FLUSH PRIVILEGES;
-```
-
-然后改 `.env` 的 `MYSQL_PASSWORD`，并 `docker compose up -d --force-recreate new-api`。
+**注意：** 用户/密码与 init SQL 只在 **首次** 初始化 `./mysql_data` 时生效。旧数据卷需删卷重建，或手动改权限后再对齐 `.env`。
 
 ## 3. 启动
 

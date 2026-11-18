@@ -15,6 +15,9 @@
 | 2026-11-18 | `deploy/test-external/Caddyfile` | 新增 Caddy：8080/8443、自签 TLS、反代 new-api:3000（WebSocket/SSE flush） |
 | 2026-11-18 | `deploy/test-external/.env.example` | 新增测试环境敏感项占位（MySQL 密码、SESSION_SECRET、Cookie Origin） |
 | 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 新增临时测试部署步骤、DNS、TLS/自签与 DNS 挑战说明 |
-| 2026-11-18 | `deploy/test-external/docker-compose.yml` | 应用库账号改为 `newapi`（`MYSQL_USER`/`MYSQL_PASSWORD`）；`SQL_DSN` 不再使用 root |
-| 2026-11-18 | `deploy/test-external/.env.example` | 增加 `MYSQL_USER`/`MYSQL_PASSWORD`；root 仅作初始化/紧急运维 |
-| 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 补充 newapi/root 登录方式与已有数据卷迁移说明 |
+| 2026-11-18 | `deploy/test-external/docker-compose.yml` | 应用用 `newapi`；root 改由 `secrets/mysql_root.env` 注入，且 `MYSQL_ROOT_HOST=localhost` |
+| 2026-11-18 | `deploy/test-external/.env.example` | 仅保留应用侧 `MYSQL_USER`/`MYSQL_PASSWORD` 与会话密钥 |
+| 2026-11-18 | `deploy/test-external/secrets/mysql_root.env.example` | 新增 root 密码单独示例文件（真实 `mysql_root.env` 不提交） |
+| 2026-11-18 | `deploy/test-external/mysql-init/01-restrict-newapi.sql` | 限制 `newapi` 仅对 `new-api` 库有 ALL 权限 |
+| 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 补充 root 分文件 + localhost 隔离安全方案与登录说明 |
+| 2026-11-18 | `.gitignore` | 忽略 `deploy/test-external/secrets/*.env`（保留 `*.example`） |

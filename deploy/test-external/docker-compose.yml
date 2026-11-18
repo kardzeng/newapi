@@ -3,7 +3,10 @@
 # Do not publish the usual privileged web ports; Caddy is the sole public entry.
 #
 # Usage (from this directory):
-#   cp .env.example .env   # then edit CHANGE_ME values
+#   cp .env.example .env
+#   cp secrets/mysql_root.env.example secrets/mysql_root.env
+#   chmod 600 .env secrets/mysql_root.env
+#   # edit CHANGE_ME values, then:
 #   docker compose up -d
 #
 # See DEPLOY_TEST.md for DNS, TLS, and access notes.
@@ -40,10 +43,11 @@ services:
     volumes:
       - ./data:/data
       - ./logs:/app/logs
+    # App must NOT load mysql root secret
     env_file:
       - .env
     environment:
-      # App DB user is newapi (not root). Passwords from .env — replace CHANGE_ME.
+      # App DB user is newapi only (privileges limited to new-api DB).
       - SQL_DSN=${MYSQL_USER:-newapi}:${MYSQL_PASSWORD}@tcp(mysql:3306)/new-api?parseTime=true
       # temporary test setup: no Redis (saves RAM on 2C/2G); in-memory cache only
       - MEMORY_CACHE_ENABLED=true
@@ -78,12 +82,18 @@ services:
     restart: unless-stopped
     # temporary test setup: cap MySQL so a 2G host is not OOM'd
     mem_limit: 512m
+    env_file:
+      - .env
+      # Root password only here (chmod 600). Injected into this container only.
+      # Do not also put MYSQL_ROOT_PASSWORD in project .env — keep it split.
+      - ./secrets/mysql_root.env
     environment:
-      # root only for container bootstrap / rare admin; app never uses it
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env — replace CHANGE_ME}
       MYSQL_DATABASE: new-api
       MYSQL_USER: ${MYSQL_USER:-newapi}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env — replace CHANGE_ME}
+      # MYSQL_ROOT_PASSWORD comes from secrets/mysql_root.env via env_file above
+      # Root only from inside the mysql container (docker exec), not from app network
+      MYSQL_ROOT_HOST: localhost
     # temporary test setup: low-memory MySQL knobs for small traffic
     command:
       - --character-set-server=utf8mb4
@@ -93,18 +103,14 @@ services:
       - --performance_schema=OFF
     volumes:
       - ./mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
     networks:
       - new-api-test
     healthcheck:
       test:
         [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "127.0.0.1",
-          "-uroot",
-          "-p${MYSQL_ROOT_PASSWORD}",
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} || exit 1",
         ]
       interval: 10s
       timeout: 5s
