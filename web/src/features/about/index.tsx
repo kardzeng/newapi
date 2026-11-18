@@ -107,6 +107,9 @@ function EmptyAboutState() {
             </a>
             .
           </p>
+          <p className='text-muted-foreground'>
+            {t('Frontend design and development by New API contributors.')}
+          </p>
         </div>
       </div>
     </div>

@@ -56,6 +56,14 @@
 
 ---
 
+## Fork Notice
+
+This repository is a fork of [QuantumNous/new-api](https://github.com/QuantumNous/new-api), licensed under [AGPL-3.0](./LICENSE) (including the Section 7 additional terms in [NOTICE](./NOTICE)).
+
+Source repository: <https://github.com/kardzeng/newapi>
+
+---
+
 ## 📝 Project Description
 
 New API is a self-hosted AI gateway for applications, agents, and teams. Connect upstream model services, expose a consistent API to your clients, and manage routing, access, usage, and costs in one place.

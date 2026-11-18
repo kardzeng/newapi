@@ -1,0 +1,50 @@
+# temporary test setup — Caddy reverse proxy for newapi.aigava.ai
+# Public listeners: HTTP 8080, HTTPS 8443 (not the usual privileged web ports).
+#
+# Default TLS mode is `tls internal` (self-signed / local CA) so the stack
+# comes up without ACME. Let's Encrypt HTTP-01 / TLS-ALPN-01 need the usual
+# challenge ports, which this temporary layout deliberately does not publish.
+# For a real cert on :8443, use a DNS challenge (see DEPLOY_TEST.md).
+
+{
+	# temporary test setup: bind HTTP & HTTPS to these ports only
+	http_port 8080
+	https_port 8443
+	# Prefer local/self-signed CA for this temporary test setup
+	local_certs
+	auto_https disable_redirects
+}
+
+# HTTPS — Host often includes :8443 when clients use a non-default port
+https://newapi.aigava.ai:8443 {
+	# temporary test setup: self-signed / internal CA (browser will warn)
+	tls internal
+
+	encode gzip
+
+	reverse_proxy new-api:3000 {
+		# WebSocket / SSE streaming: disable response buffering, flush ASAP
+		flush_interval -1
+
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		header_up Upgrade {http.request.header.Upgrade}
+		header_up Connection {http.request.header.Connection}
+	}
+}
+
+# Plain HTTP on :8080 (temporary test setup; no forced HTTPS redirect)
+http://newapi.aigava.ai:8080 {
+	reverse_proxy new-api:3000 {
+		flush_interval -1
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up Upgrade {http.request.header.Upgrade}
+		header_up Connection {http.request.header.Connection}
+	}
+}

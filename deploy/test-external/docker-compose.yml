@@ -1,0 +1,113 @@
+# temporary test setup — external test deploy for newapi.aigava.ai
+# Ports published on the host: 8080 (HTTP) and 8443 (HTTPS) via Caddy only.
+# Do not publish the usual privileged web ports; Caddy is the sole public entry.
+#
+# Usage (from this directory):
+#   cp .env.example .env   # then edit CHANGE_ME values
+#   docker compose up -d
+#
+# See DEPLOY_TEST.md for DNS, TLS, and access notes.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: new-api-caddy
+    restart: unless-stopped
+    # temporary test setup: public listeners only on 8080 / 8443
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+    depends_on:
+      new-api:
+        condition: service_healthy
+    networks:
+      - new-api-test
+
+  new-api:
+    image: calciumion/new-api:latest
+    container_name: new-api
+    restart: unless-stopped
+    command: --log-dir /app/logs
+    # temporary test setup: keep app on internal :3000 only.
+    # Host HTTP/HTTPS is handled by Caddy (8080 / 8443 → new-api:3000).
+    # No host port publish here, so 8080 is not double-bound.
+    expose:
+      - "3000"
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      # MySQL DSN — password comes from .env (replace CHANGE_ME before start)
+      - SQL_DSN=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/new-api?parseTime=true
+      # temporary test setup: no Redis (saves RAM on 2C/2G); in-memory cache only
+      - MEMORY_CACHE_ENABLED=true
+      - TZ=${TZ:-Asia/Shanghai}
+      - ERROR_LOG_ENABLED=true
+      - BATCH_UPDATE_ENABLED=true
+      - NODE_NAME=new-api-test-1
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
+      - SESSION_COOKIE_TRUSTED_URL=${SESSION_COOKIE_TRUSTED_URL:-https://newapi.aigava.ai:8443}
+      # Trust Docker bridge / private ranges so Caddy-forwarded client IP works
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - new-api-test
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mysql:
+    image: mysql:8.0
+    container_name: new-api-mysql
+    restart: unless-stopped
+    # temporary test setup: cap MySQL so a 2G host is not OOM'd
+    mem_limit: 512m
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env — replace CHANGE_ME}
+      MYSQL_DATABASE: new-api
+    # temporary test setup: low-memory MySQL knobs for small traffic
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb_buffer_pool_size=128M
+      - --max_connections=50
+      - --performance_schema=OFF
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - new-api-test
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+networks:
+  new-api-test:
+    driver: bridge

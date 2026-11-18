@@ -56,6 +56,14 @@
 
 ---
 
+## Fork 声明
+
+本仓库 fork 自 [QuantumNous/new-api](https://github.com/QuantumNous/new-api)，遵循 [AGPL-3.0](./LICENSE)（含 [NOTICE](./NOTICE) 中的第 7 条附加条款）。
+
+源码仓库地址：<https://github.com/kardzeng/newapi>
+
+---
+
 ## 📝 项目说明
 
 New API 是面向应用、Agent 和团队的自托管 AI 网关。将不同厂商的模型服务接入统一入口，在同一套控制台中管理渠道、访问权限、用量与成本。
