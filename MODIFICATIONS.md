@@ -15,3 +15,6 @@
 | 2026-11-18 | `deploy/test-external/Caddyfile` | 新增 Caddy：8080/8443、自签 TLS、反代 new-api:3000（WebSocket/SSE flush） |
 | 2026-11-18 | `deploy/test-external/.env.example` | 新增测试环境敏感项占位（MySQL 密码、SESSION_SECRET、Cookie Origin） |
 | 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 新增临时测试部署步骤、DNS、TLS/自签与 DNS 挑战说明 |
+| 2026-11-18 | `deploy/test-external/docker-compose.yml` | 应用库账号改为 `newapi`（`MYSQL_USER`/`MYSQL_PASSWORD`）；`SQL_DSN` 不再使用 root |
+| 2026-11-18 | `deploy/test-external/.env.example` | 增加 `MYSQL_USER`/`MYSQL_PASSWORD`；root 仅作初始化/紧急运维 |
+| 2026-11-18 | `deploy/test-external/DEPLOY_TEST.md` | 补充 newapi/root 登录方式与已有数据卷迁移说明 |

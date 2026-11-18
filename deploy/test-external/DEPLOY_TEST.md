@@ -29,9 +29,43 @@ cp .env.example .env
 
 编辑 `.env`：
 
-1. 把 `MYSQL_ROOT_PASSWORD=CHANGE_ME` 改成强密码  
-2. 用 `openssl rand -hex 32` 生成并填入 `SESSION_SECRET`  
-3. 确认 `SESSION_COOKIE_TRUSTED_URL=https://newapi.aigava.ai:8443`
+1. `MYSQL_USER=newapi`（默认即可）  
+2. 把 `MYSQL_PASSWORD=CHANGE_ME` 改成应用库强密码（**new-api 用这个账号连库，不用 root**）  
+3. 把 `MYSQL_ROOT_PASSWORD=CHANGE_ME_ROOT_ONLY` 改成另一套强密码（仅容器初始化 / 紧急运维）  
+4. 用 `openssl rand -hex 32` 生成并填入 `SESSION_SECRET`  
+5. 确认 `SESSION_COOKIE_TRUSTED_URL=https://newapi.aigava.ai:8443`
+
+### MySQL 怎么登录
+
+| 用途 | 用户 | 密码变量 | 说明 |
+| --- | --- | --- | --- |
+| 应用 / 日常 | `newapi` | `MYSQL_PASSWORD` | 官方镜像初始化时自动创建，权限仅库 `new-api` |
+| 紧急管理 | `root` | `MYSQL_ROOT_PASSWORD` | 不要写进 `SQL_DSN`；平时别用 |
+
+在容器内登录应用用户：
+
+```bash
+docker compose exec mysql \
+  mysql -u newapi -p"$MYSQL_PASSWORD" new-api
+# 或交互输入密码：
+docker compose exec -it mysql mysql -u newapi -p new-api
+```
+
+紧急用 root：
+
+```bash
+docker compose exec -it mysql mysql -u root -p
+```
+
+**注意：** `MYSQL_USER` / `MYSQL_PASSWORD` 只在 **首次** 初始化 `./mysql_data` 时生效。若以前已经用 root 起过库，需要删卷重建，或手动建用户：
+
+```sql
+CREATE USER 'newapi'@'%' IDENTIFIED BY '你的密码';
+GRANT ALL PRIVILEGES ON `new-api`.* TO 'newapi'@'%';
+FLUSH PRIVILEGES;
+```
+
+然后改 `.env` 的 `MYSQL_PASSWORD`，并 `docker compose up -d --force-recreate new-api`。
 
 ## 3. 启动
 
@@ -128,5 +162,6 @@ docker compose up -d --force-recreate new-api
 
 - 这是 **temporary test setup**，密码、`SESSION_SECRET`、证书策略都按测试机处理；上正式环境请重做加固。  
 - `SQL_DSN` 在 `docker-compose.yml` 中按  
-  `root:<密码>@tcp(mysql:3306)/new-api?parseTime=true` 组装。  
+  `newapi:<MYSQL_PASSWORD>@tcp(mysql:3306)/new-api?parseTime=true` 组装（用户名可用 `MYSQL_USER` 覆盖）。  
+- 密码尽量避免 `@` `:` `/` `#` 等特殊字符，否则 DSN 需 URL 编码。  
 - 根目录原有 `docker-compose.yml` / `.env.example` **未改动**；请只在本目录启动，避免混用两套编排。

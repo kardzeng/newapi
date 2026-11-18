@@ -43,8 +43,8 @@ services:
     env_file:
       - .env
     environment:
-      # MySQL DSN — password comes from .env (replace CHANGE_ME before start)
-      - SQL_DSN=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/new-api?parseTime=true
+      # App DB user is newapi (not root). Passwords from .env — replace CHANGE_ME.
+      - SQL_DSN=${MYSQL_USER:-newapi}:${MYSQL_PASSWORD}@tcp(mysql:3306)/new-api?parseTime=true
       # temporary test setup: no Redis (saves RAM on 2C/2G); in-memory cache only
       - MEMORY_CACHE_ENABLED=true
       - TZ=${TZ:-Asia/Shanghai}
@@ -79,8 +79,11 @@ services:
     # temporary test setup: cap MySQL so a 2G host is not OOM'd
     mem_limit: 512m
     environment:
+      # root only for container bootstrap / rare admin; app never uses it
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env — replace CHANGE_ME}
       MYSQL_DATABASE: new-api
+      MYSQL_USER: ${MYSQL_USER:-newapi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env — replace CHANGE_ME}
     # temporary test setup: low-memory MySQL knobs for small traffic
     command:
       - --character-set-server=utf8mb4
