@@ -29,3 +29,7 @@
 | 2026-11-18 | `deploy/test-external/{docker-compose.yml,Caddyfile,DEPLOY_TEST.md,.env.example}` | 对外 HTTP 端口由 8080 改为 7000（HTTPS 仍为 8443） |
 | 2026-11-18 | `deploy/test-external/{Caddyfile,docker-compose.yml,DEPLOY_TEST.md}` | 改为 IP 访问 `http://159.75.3.202:7000`；关闭域名/HTTPS 入口（规避未备案拦截） |
 | 2026-11-18 | `deploy/test-external/{Caddyfile,docker-compose.yml,DEPLOY_TEST.md,.env.example}` | 对外 HTTP 端口由 7000 改为标准 80（`http://159.75.3.202/`） |
+| 2026-11-21 | `deploy/test-external/docker-compose.yml` | 移除已泄露的硬编码 SESSION/CRYPTO 密钥；改为仅从 `.env` 读取；启用 Secure Cookie |
+| 2026-11-21 | `deploy/test-external/Caddyfile` | IP 自签 HTTPS（443）+ HTTP 80 跳转，避免公网明文传输 |
+| 2026-11-21 | `deploy/test-external/.env.example` | 增加 SESSION/CRYPTO/Cookie Origin 占位；禁止把真实密钥写进仓库 |
+| 2026-11-21 | `deploy/test-external/DEPLOY_TEST.md` | 同步 HTTPS 访问与密钥轮换说明 |

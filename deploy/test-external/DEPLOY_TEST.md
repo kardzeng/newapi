@@ -2,14 +2,14 @@
 
 本目录是面向外网临时测试的最小部署配置（2 核 2G、MySQL、访问量小）。
 
-- **访问地址（强制用 IP，不用未备案域名）**：`http://159.75.3.202`
-- 对外端口：仅 HTTP `80`（Caddy 反代到 new-api:3000）
+- **访问地址（强制用 IP，不用未备案域名）**：`https://159.75.3.202`（自签证书，浏览器会告警，选继续访问）
+- 对外端口：HTTPS `443`；HTTP `80` 仅跳转到 HTTPS（业务不再明文传输）
 - 无 Redis：`MEMORY_CACHE_ENABLED=true`（省内存）
 - 合规：勿改仓库根目录的 `LICENSE` / `NOTICE` / `THIRD-PARTY-LICENSES.md`；界面署名保持原样
 
 ## 1. 网络放行
 
-安全组 / 防火墙放行入站 **80**（以及你自己用的 SSH，例如 61122）。  
+安全组 / 防火墙放行入站 **80**、**443**（以及你自己用的 SSH，例如 61122）。  
 不要依赖未备案域名访问（会被运营商拦截）。
 
 ## 2. 准备环境变量
@@ -29,16 +29,18 @@ cp secrets/mysql_root.env.example secrets/mysql_root.env
 chmod 600 .env secrets/mysql_root.env
 ```
 
-1. `.env`：只放应用侧 MySQL 普通用户  
+1. `.env`（**密钥只放这里，不要写进 compose / 不要提交 Git**）  
    - `MYSQL_USER=newapi`  
    - `MYSQL_PASSWORD=` 应用库强密码  
+   - `SESSION_SECRET=`（`openssl rand -hex 32`，**必须换掉曾泄露到 Git 的旧值**）  
+   - `CRYPTO_SECRET=`（再生成一串，**必须与 SESSION_SECRET 不同**）  
+   - `SESSION_COOKIE_SECURE=true`  
+   - `SESSION_COOKIE_TRUSTED_URL=https://159.75.3.202`  
 2. `secrets/mysql_root.env`：只放 root  
    - `MYSQL_ROOT_PASSWORD=`（`openssl rand -base64 32`）  
    - **不要**把 root 密码写进 `.env`，**不要**把该文件挂给 `new-api` 容器  
-3. 会话密钥与 Cookie：已在 `docker-compose.yml` 固定  
-   - `SESSION_COOKIE_SECURE=false`（HTTP `80`；若为 true，refresh cookie 不发送，约 15 分钟掉登录）  
-   - `SESSION_SECRET` / `CRYPTO_SECRET` 为两个独立固定长串（勿跨环境复用）  
-   - 未设置 `SESSION_COOKIE_TRUSTED_URL`（Secure=false 时不应配置）
+
+> 曾提交到 GitHub 的 `SESSION_SECRET` / `CRYPTO_SECRET` 视为已泄露，服务器上必须重新生成并重建 `new-api` 容器。
 
 ### Root 密码安全方案（temporary test setup）
 
@@ -82,10 +84,11 @@ docker compose logs -f --tail=100
 ## 4. 访问
 
 ```text
-http://159.75.3.202
+https://159.75.3.202
 ```
 
-不要用未备案域名。默认管理员账号以镜像 / 首次启动提示为准。
+浏览器会提示自签证书不受信任 → 选择继续访问即可。不要用未备案域名。  
+默认管理员账号以镜像 / 首次启动提示为准。
 
 ## 5. 常用运维
 

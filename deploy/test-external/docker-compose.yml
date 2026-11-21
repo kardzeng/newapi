@@ -1,23 +1,24 @@
 # temporary test setup — external test deploy (IP access, no ICP domain)
-# Public entry: http://159.75.3.202 via Caddy only.
+# Public entry: https://159.75.3.202 (self-signed). HTTP :80 redirects to HTTPS.
 #
 # Usage (from this directory):
 #   cp .env.example .env
 #   cp secrets/mysql_root.env.example secrets/mysql_root.env
 #   chmod 600 .env secrets/mysql_root.env
-#   # edit CHANGE_ME values, then:
+#   # edit CHANGE_ME — generate SESSION_SECRET / CRYPTO_SECRET with openssl rand -hex 32
 #   docker compose up -d
 #
-# See DEPLOY_TEST.md for DNS, TLS, and access notes.
+# See DEPLOY_TEST.md for access and secret rotation notes.
 
 services:
   caddy:
     image: caddy:2-alpine
     container_name: new-api-caddy
     restart: unless-stopped
-    # temporary test setup: public HTTP only on 80
+    # temporary test setup: HTTPS 443 + HTTP 80 (redirect only)
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy_data:/data
@@ -34,8 +35,7 @@ services:
     restart: unless-stopped
     command: --log-dir /app/logs
     # temporary test setup: keep app on internal :3000 only.
-    # Host HTTP is handled by Caddy (80 → new-api:3000).
-    # No host port publish here, so 80 is not double-bound.
+    # Host traffic is handled by Caddy (443 → new-api:3000).
     expose:
       - "3000"
     volumes:
@@ -53,11 +53,11 @@ services:
       - ERROR_LOG_ENABLED=true
       - BATCH_UPDATE_ENABLED=true
       - NODE_NAME=new-api-test-1
-      # temporary test setup: HTTP :80 — Secure cookies would drop refresh and expire ~15m
-      - SESSION_COOKIE_SECURE=false
-      # Two independent fixed secrets (do not reuse across envs; keep stable on this host)
-      - SESSION_SECRET=c6592a7b44fe2aff6adb3bd3c56e0421011203000a215f88269759bc755e550a
-      - CRYPTO_SECRET=6480ee931d08711bf351379eed6d12077ed79cde698e46fa15d8760ec899b506
+      # Secrets ONLY from .env (never hardcode in this file / git)
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env — openssl rand -hex 32}
+      - CRYPTO_SECRET=${CRYPTO_SECRET:?Set CRYPTO_SECRET in .env — different openssl rand -hex 32}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
+      - SESSION_COOKIE_TRUSTED_URL=${SESSION_COOKIE_TRUSTED_URL:-https://159.75.3.202}
       # Trust Docker bridge / private ranges so Caddy-forwarded client IP works
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
     depends_on:
